@@ -1,0 +1,19 @@
+PromoPilot is an autonomous promotion planner for an electronics retailer. The problem is simple to describe but difficult to optimize. A promotion must balance inventory, competitor prices, customer behavior, demand events, and margin constraints.
+
+PromoPilot combines five business signals: inventory, competitor pricing, demand events, customer segments, and product relationships. Instead of allowing a language model to guess the numbers, trusted Python calculations handle the arithmetic and hard constraints.
+
+First, the system ingests the retail signals. Our synthetic MVP contains fifty products, seven customer segments, five demand events, seven hundred and fifty competitor observations, and product relationships.
+
+Next, the planner ranks promotion opportunities. High inventory, aging stock, competitor pressure, and viable margin increase the opportunity score.
+
+The planner then selects a candidate strategy. For the selected product, it chooses a promotion mechanism, discount, duration, region, and target customer segment. The decision is accompanied by reasons such as excess inventory, aging inventory, and competitor pressure.
+
+Before launch, the planner simulates the promotion. It tests candidate discount levels and estimates fourteen-day units, revenue, and margin. A candidate is not approved simply because it sounds attractive.
+
+The constraint validator checks hard business rules, including minimum margin and marketing budget. If a candidate fails, the agentic workflow rejects it and evaluates another candidate. This gives us a measurable re-planning loop rather than a simple prompt and response.
+
+The final output is an explainable promotion plan with the selected product, discount, duration, target segment, expected outcome, and constraint status.
+
+PromoPilot demonstrates nine retail capabilities: product selection, promotion mechanism, discount optimization, cannibalization awareness, product relationships, inventory constraints, geographic customization, competitor awareness, and pre-launch simulation.
+
+The MVP can be extended with live retail data, learned demand elasticity, richer cannibalization models, and a human approval workflow. The key idea is to make promotion planning faster, safer, and explainable.
