@@ -1,34 +1,65 @@
+from pathlib import Path
+
 import streamlit as st
+
 from agent import PromotionAgent
 
 st.set_page_config(page_title='PromoPilot', page_icon='🛍️', layout='wide')
 st.title('🛍️ PromoPilot — Autonomous Promotion Planner')
 st.caption('Electronics retail | Agentic promotion planning MVP')
 
-agent=PromotionAgent('../data/electronics_retail_promotion_dataset.xlsx')
+# Resolve the workbook relative to this Python file so the app works regardless
+# of the directory from which Streamlit is launched.
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+WORKBOOK = PROJECT_ROOT / 'data' / 'electronics_retail_promotion_dataset.xlsx'
+
+if not WORKBOOK.exists():
+    st.error(f'Dataset not found: {WORKBOOK}')
+    st.stop()
 
 with st.sidebar:
     st.header('Planning Controls')
-    min_margin=st.number_input('Minimum margin %', 5.0, 30.0, 12.0, 0.5)
-    top_n=st.slider('Recommendations',1,10,5)
+    min_margin = st.number_input('Minimum margin %', 5.0, 30.0, 12.0, 0.5)
+    top_n = st.slider('Recommendations', 1, 10, 5)
 
-# MVP uses deterministic constraint/simulation logic; the reasoning trace is surfaced for the demo.
-result=agent.run(top_n)
-plans=result["plans"]
+agent = PromotionAgent(str(WORKBOOK))
+result = agent.run(top_n=top_n, min_margin=min_margin)
+plans = result['plans']
 
 st.subheader('Recommended Promotions')
-st.dataframe(plans[['product_name','region','score','mechanism','discount_pct','duration_days','target_segment','expected_units','expected_revenue','margin_pct','constraints']], use_container_width=True)
+if plans.empty:
+    st.warning('No promotion candidate satisfies the current constraints.')
+else:
+    display_cols = [
+        'product_name', 'region', 'score', 'mechanism', 'discount_pct',
+        'duration_days', 'target_segment', 'expected_units',
+        'expected_revenue', 'margin_pct', 'constraints'
+    ]
+    st.dataframe(plans[display_cols], use_container_width=True)
 
-if not plans.empty:
-    p=plans.iloc[0]
+    p = plans.iloc[0]
     st.subheader('Autonomous Decision Trace')
     for step in result['trace']:
         st.write('→', step)
+
     st.write(f"**Selected:** {p.product_name} — {p.region}")
-    for reason in str(p.reasons).split('; '): st.write('•', reason)
-    st.write(f"**Strategy:** {p.mechanism}, {p.discount_pct}% for {p.duration_days} days, targeting **{p.target_segment}**.")
-    st.write(f"**Simulation:** {p.expected_units} units / 14 days, revenue {p.expected_revenue:,.0f}, margin {p.margin_pct:.2f}%.")
-    st.success('Constraint validation: PASS — candidate satisfies the minimum-margin and budget rules.')
+    for reason in str(p.reasons).split('; '):
+        st.write('•', reason)
+    st.write(
+        f"**Strategy:** {p.mechanism}, {p.discount_pct}% for "
+        f"{p.duration_days} days, targeting **{p.target_segment}**."
+    )
+    st.write(
+        f"**Simulation:** {p.expected_units} units / 14 days, "
+        f"revenue {p.expected_revenue:,.0f}, margin {p.margin_pct:.2f}%."
+    )
+    st.success(
+        f"Constraint validation: PASS — minimum margin {min_margin:.1f}% "
+        "and marketing budget rules satisfied."
+    )
 
 st.divider()
-st.caption('Agentic loop: Select → Strategize → Simulate → Validate → Re-plan when constraints fail → Approve')
+st.caption(
+    'Agentic loop: Select → Strategize → Simulate → Validate → '
+    'Re-plan when constraints fail → Approve'
+)

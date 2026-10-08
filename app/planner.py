@@ -5,7 +5,8 @@ BUDGET = 25000
 DISCOUNTS = [5, 8, 10, 12, 15, 18, 20]
 
 class PromotionPlanner:
-    def __init__(self, workbook):
+    def __init__(self, workbook, min_margin=MIN_MARGIN_PCT):
+        self.min_margin = float(min_margin)
         self.inv = pd.read_excel(workbook, sheet_name='Products_Inventory')
         self.comp = pd.read_excel(workbook, sheet_name='Competitor_Prices')
         self.holidays = pd.read_excel(workbook, sheet_name='Holidays')
@@ -24,7 +25,7 @@ class PromotionPlanner:
         aging = min(row.inventory_age_days / 120, 1)
         comp_gap, _ = self.competitor_signal(row)
         competitor = min(max(comp_gap / 15, 0), 1)
-        margin = min(max((row.gross_margin_pct - MIN_MARGIN_PCT) / 20, 0), 1)
+        margin = min(max((row.gross_margin_pct - self.min_margin) / 20, 0), 1)
         return round(100 * (.35*overstock + .25*aging + .25*competitor + .15*margin), 2)
 
     def simulate(self, row, discount):
@@ -36,7 +37,7 @@ class PromotionPlanner:
         profit = (new_price-row.cost_price)*units
         return {'discount':discount,'price':round(new_price,2),'margin':round(margin,2),
                 'units':round(units,1),'revenue':round(revenue,2),'profit':round(profit,2),
-                'pass': margin >= MIN_MARGIN_PCT and revenue*.02 <= BUDGET}
+                'pass': margin >= self.min_margin and revenue*.02 <= BUDGET}
 
     def plan(self, row):
         gap, competitor = self.competitor_signal(row)
